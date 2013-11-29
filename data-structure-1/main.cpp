@@ -25,14 +25,13 @@ void insertOperation(HashedFile file) {
   unsigned int age;
   scanf("%d", &age);
 
-  user aUser;
-  // user aUser = file.get(id);
+  user aUser = file.get(id);
   
-  // if (!isEmpty(aUser)){ //Is a valid key
-  //   printf("chave ja existente: %d\n", id);
+  if (!isEmpty(aUser)){ //Is a valid key
+    printf("chave ja existente: %d\n", id);
 
-  //   return;
-  // }
+    return;
+  }
 
   aUser.id = id;
   strcpy(aUser.name, name);
@@ -150,7 +149,7 @@ int main() {
   char *fileName = "teste.data";
   HashedFile aFile(fileName);
 
-  testData(aFile);
+  // testData(aFile);
 
   char op;
   do {

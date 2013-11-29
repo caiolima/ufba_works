@@ -50,7 +50,23 @@ void HashedFile::init(){
 }
 
 int HashedFile::getPos(int key){
-  return hash1(key);
+  int homeAdress = hash1(key);
+  int inc = hash2(key);
+  int currentPos = homeAdress;
+
+  do{
+    user aUser = this->getInPosition(currentPos);
+    if(aUser.id == key){
+      return currentPos;
+    }
+
+    if(aUser.id == EMPTY)
+      return -1; 
+    currentPos += inc;
+    currentPos = currentPos % FILE_SIZE;
+  }while(currentPos != homeAdress);
+
+  return -1;
 }
 
 bool HashedFile::writeInPosition(int pos, user data){
@@ -98,11 +114,17 @@ bool HashedFile::remove(int key) {
 }
 
 user HashedFile::get(int key) {
-  user aUser;
-
   int pos = this->getPos(key);
 
-  return this->getInPosition(pos);
+  //Didn't find
+  user aUser;
+  if(pos == -1){
+    aUser.id = EMPTY;
+  } else {
+    aUser = this->getInPosition(pos);
+  }
+
+  return aUser;
     
 }
 
