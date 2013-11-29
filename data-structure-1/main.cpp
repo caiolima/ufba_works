@@ -25,13 +25,14 @@ void insertOperation(HashedFile file) {
   unsigned int age;
   scanf("%d", &age);
 
-  user aUser = file.get(id);
+  user aUser;
+  // user aUser = file.get(id);
   
-  if (!isEmpty(aUser)){ //Is a valid key
-    printf("chave ja existente: %d\n", id);
+  // if (!isEmpty(aUser)){ //Is a valid key
+  //   printf("chave ja existente: %d\n", id);
 
-    return;
-  }
+  //   return;
+  // }
 
   aUser.id = id;
   strcpy(aUser.name, name);
@@ -85,6 +86,7 @@ void treeOperation(HashedFile f){
   node *root = createBTree(key, f);  
 
   printTrySeq(root);
+  operation* seqOperation = getOperationList(root);
 
   destroy(root); 
 }
@@ -124,15 +126,23 @@ void insertTestData(int id, int pos, HashedFile f){
 
 void testData(HashedFile f){
   
-  insertTestData(41, 0, f);
   insertTestData(39, 1, f);
   insertTestData(13, 2, f);
   insertTestData(27, 5, f);
   insertTestData(16, 6, f);
   insertTestData(18, 7, f);
-  insertTestData(17, 8, f);
+  insertTestData(28, 8, f);
   insertTestData(29, 9, f);
-  insertTestData(28, 10, f);
+
+  // insertTestData(41, 0, f);
+  // insertTestData(39, 1, f);
+  // insertTestData(13, 2, f);
+  // insertTestData(27, 5, f);
+  // insertTestData(16, 6, f);
+  // insertTestData(18, 7, f);
+  // insertTestData(17, 8, f);
+  // insertTestData(29, 9, f);
+  // insertTestData(28, 10, f);
 
 }
 

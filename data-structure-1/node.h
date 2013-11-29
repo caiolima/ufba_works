@@ -1,4 +1,5 @@
 #include "HashedFile.h"
+#include "operation.h"
 
 #ifndef TNODE
 #define TNODE
@@ -26,6 +27,8 @@ node* createBTree(int, HashedFile);
 node* createTestBTree(int, int, int);
 
 void printTrySeq(node *); 
+
+operation* getOperationList(node *);
 
 void addLeftChild(node *, node *);
 void addRightChild(node *, node *);

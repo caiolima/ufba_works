@@ -3,6 +3,8 @@
 #include <string.h>
 #include "user.h"
 #include "HashedFile.h"
+#include "operation.h"
+#include "node.h"
 
 //Hash funcitons
 //--------------------------------------------------------
@@ -64,9 +66,11 @@ bool HashedFile::writeInPosition(int pos, user data){
 }
 
 bool HashedFile::write(int key, user data) {
-  int pos = this->getPos(key);
+   node *root = createBTree(key, *this);
+   operation* seqOperation = getOperationList(root);
 
-  return this->writeInPosition(pos, data); 
+   this->execute(seqOperation, data);
+   destroy(root); 
 }
 
 bool HashedFile::remove(int key) {
@@ -113,4 +117,19 @@ user HashedFile::getInPosition(int pos){
 
   fclose(f);
   return aUser;
+}
+
+void HashedFile::execute(operation *opList, user newData) { 
+  operation *currOp  = opList;
+  do{
+    if(currOp->from == -1){
+      this->writeInPosition(currOp->to, newData);
+    } else {
+      user aUser = this->getInPosition(currOp->from);
+      this->writeInPosition(currOp->to, aUser);
+    }
+    
+    currOp = currOp->next;
+  }while(currOp != NULL);
+  destroy(opList);
 }

@@ -1,5 +1,5 @@
 CC=g++
-OBJ = main.o HashedFile.o node.o user.o
+OBJ = main.o HashedFile.o node.o user.o operation.o
 
 %.o: %.cpp
 	$(CC) -g -c -o $@ $< 

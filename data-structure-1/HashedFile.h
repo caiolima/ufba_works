@@ -1,4 +1,5 @@
 #include "user.h"
+#include "operation.h"
 
 #ifndef HASHEDFILE
 #define HASHEDFILE
@@ -12,7 +13,7 @@ class HashedFile{
 
 private:
   char *file_name;
-
+  void execute(operation *, user);
 
 public:
   HashedFile(char *);

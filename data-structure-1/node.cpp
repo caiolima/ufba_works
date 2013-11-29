@@ -4,6 +4,7 @@
 #include "node.h"
 #include "HashedFile.h"
 #include "user.h"
+#include "operation.h"
 
 bool isRoot(node *aNode){
   return aNode->parent == NULL;
@@ -25,10 +26,10 @@ bool isLeftChild(node *aNode){
   return aNode->parent->lChild == aNode;
 }
 
-node* getParentChaining(node *aNode){
+node* findChangePlace(node *aNode){
   
   if(isRoot(aNode))
-    return aNode;
+    return NULL;
 
   if(isRightChild(aNode))
     return aNode->parent;
@@ -38,6 +39,9 @@ node* getParentChaining(node *aNode){
     lastParent = lastParent->parent;
   }
   
+  if(isRoot(lastParent))
+    return NULL;
+
   return lastParent->parent;
 }
 
@@ -196,4 +200,60 @@ void printTrySeqLevel(node **nodeList, int level) {
 
 void printTrySeq(node* node) {
   printTrySeqLevel(&node, 0);
+}
+
+node *findEmptySpace(node *aNode){
+  if (aNode->key == EMPTY)
+    return aNode;
+
+  if(aNode->lChild != NULL){
+    node *lChild = findEmptySpace(aNode->lChild);
+    if(lChild->key == EMPTY)
+      return lChild;
+  }
+  if(aNode->rChild != NULL){
+    node *rChild = findEmptySpace(aNode->rChild);
+    if(rChild->key == EMPTY)
+      return rChild;
+  }
+
+  return aNode;
+}
+
+operation* getOperationList(node *aNode){
+  node *moveTo = findEmptySpace(aNode);
+  node *moveFrom = findChangePlace(moveTo);
+  operation *lastOperation = NULL;
+  operation *firstOperation = NULL;
+
+  while(moveFrom != NULL){
+    operation *o = (operation *) malloc(sizeof(operation));
+
+    o->from = moveFrom->pos;
+    o->to = moveTo->pos;
+
+    if (lastOperation != NULL) {
+      lastOperation->next = o;
+    } else {
+      firstOperation = o;
+    }
+
+    lastOperation = o;
+    // printf("%d -> %d \n", moveFrom->pos, moveTo->pos);
+    moveTo = moveFrom;
+    moveFrom = findChangePlace(moveFrom);
+  }
+
+  operation *o = (operation *) malloc(sizeof(operation));
+  o->from = -1;
+  o->to = moveTo->pos;
+  o->next = NULL;
+  if(firstOperation == NULL) {
+    firstOperation = o;
+  } else {
+    lastOperation->next = o;
+  }
+
+  return firstOperation;
+  // printf("new -> %d \n", moveTo->pos);
 }
