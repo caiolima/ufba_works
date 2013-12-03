@@ -48,7 +48,7 @@ node* findChangePlace(node *aNode){
 int getNextPosition(int key, node* aNode){
   
   if(isRightChild(aNode))
-    return (hash2(aNode->parent->key) + aNode->parent->pos) % FILE_SIZE;
+    return (hash2(aNode->parent->key) + aNode->parent->pos) % TAMANHO_ARQUIVO;
 
   node *lastParent = aNode->parent;
   while(!(isRoot(lastParent) || isRightChild(lastParent))){
@@ -56,10 +56,10 @@ int getNextPosition(int key, node* aNode){
   }
 
   if(isRoot(lastParent)){
-    return (hash2(key) + aNode->parent->pos) % FILE_SIZE;
+    return (hash2(key) + aNode->parent->pos) % TAMANHO_ARQUIVO;
   }
 
-  return (hash2(lastParent->parent->key) + aNode->parent->pos) % FILE_SIZE;
+  return (hash2(lastParent->parent->key) + aNode->parent->pos) % TAMANHO_ARQUIVO;
 
 }
 

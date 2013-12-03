@@ -9,11 +9,11 @@
 //Hash funcitons
 //--------------------------------------------------------
 int hash1(int key) {
-  return key % FILE_SIZE;
+  return key % TAMANHO_ARQUIVO;
 }
 
 int hash2(int key) {
-  int result = key/FILE_SIZE;
+  int result = key/TAMANHO_ARQUIVO;
   if(result == 0)
     result = 1;
   return result;
@@ -35,18 +35,42 @@ void HashedFile::init(){
   }
 
   f = fopen(this->file_name, "w");
-  user users[FILE_SIZE];
+  user users[TAMANHO_ARQUIVO];
 
-  for (int i = 0; i < FILE_SIZE; i++) {
+  for (int i = 0; i < TAMANHO_ARQUIVO; i++) {
     users[i].id = EMPTY;
     strcpy(users[i].name, "");
     users[i].age = 0;
   }
 
-  fwrite(users, sizeof(user), FILE_SIZE, f);
+  fwrite(users, sizeof(user), TAMANHO_ARQUIVO, f);
 
   fclose(f);
 
+}
+
+int HashedFile::getNumberOfAccess(int key) {
+  int homeAdress = hash1(key);
+  int inc = hash2(key);
+  int currentPos = homeAdress;
+
+  int count = 0;
+  do {
+    user aUser = this->getInPosition(currentPos);
+    count++;
+    if (aUser.id == key){
+      return count;
+    }
+
+    if (aUser.id == EMPTY) {
+      return -1; 
+    }
+      
+    currentPos += inc;
+    currentPos = currentPos % TAMANHO_ARQUIVO;
+  } while (currentPos != homeAdress);
+
+  return -1; //error
 }
 
 int HashedFile::getPos(int key){
@@ -54,17 +78,19 @@ int HashedFile::getPos(int key){
   int inc = hash2(key);
   int currentPos = homeAdress;
 
-  do{
+  do {
     user aUser = this->getInPosition(currentPos);
-    if(aUser.id == key){
+    if (aUser.id == key) {
       return currentPos;
     }
 
-    if(aUser.id == EMPTY)
-      return -1; 
+    if (aUser.id == EMPTY) {
+      return -1;
+    } 
+
     currentPos += inc;
-    currentPos = currentPos % FILE_SIZE;
-  }while(currentPos != homeAdress);
+    currentPos = currentPos % TAMANHO_ARQUIVO;
+  } while (currentPos != homeAdress);
 
   return -1;
 }

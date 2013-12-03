@@ -66,7 +66,7 @@ void removeOperation(HashedFile f){
 }
 
 void printOperation(HashedFile f) {
-  for (int i = 0; i < FILE_SIZE; i++) {
+  for (int i = 0; i < TAMANHO_ARQUIVO; i++) {
     user aUser = f.getInPosition(i);
     if (aUser.id == EMPTY){
       printf("%d: vazio\n", i);
@@ -78,7 +78,7 @@ void printOperation(HashedFile f) {
   }
 }
 
-void treeOperation(HashedFile f){
+void treeOperation(HashedFile f) {
   unsigned int key;
   scanf("%d", &key);
 
@@ -88,6 +88,23 @@ void treeOperation(HashedFile f){
   operation* seqOperation = getOperationList(root);
 
   destroy(root); 
+}
+
+void averageAcessOperation(HashedFile f) {
+  int countEle = 0;
+  float acc = 0;
+  for (int i = 0; i < TAMANHO_ARQUIVO; i++) {
+    user aUser = f.getInPosition(i);
+    
+    if (isEmpty(aUser)) {
+      continue;
+    }
+
+    countEle++;
+    acc += f.getNumberOfAccess(aUser.id);
+  }
+  
+  printf("%f\n", acc/countEle);
 }
 
 void executeOperation(char op, HashedFile file) {
@@ -107,6 +124,8 @@ void executeOperation(char op, HashedFile file) {
   case 't':
     treeOperation(file);
     break;
+  case 'm':
+    averageAcessOperation(file);
   case 'e':
     break;
   default:;

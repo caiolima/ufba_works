@@ -4,7 +4,7 @@
 #ifndef HASHEDFILE
 #define HASHEDFILE
 
-#define FILE_SIZE 11
+#define TAMANHO_ARQUIVO 11
 
 int hash1(int);
 int hash2(int);
@@ -24,6 +24,7 @@ public:
   user get(int);
   user getInPosition(int);
   int getPos(int);
+  int getNumberOfAccess(int);
 
 };
 
