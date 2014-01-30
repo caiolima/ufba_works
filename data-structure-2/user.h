@@ -11,5 +11,6 @@ typedef struct{
 } user;
 
 bool isEmpty(user);
+user createEmptyUser();
 
 #endif
