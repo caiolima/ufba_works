@@ -80,3 +80,23 @@ bool insertOn(overflow_page *page, user u){
 
   return false;
 }
+
+bool deleteRecordOn(overflow_page* oPage, int key) {
+  for(int i = 0; i < OVERFLOW_N; i++){
+    if(oPage->data[i].id == key){
+      oPage->data[i].id = EMPTY;
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool isOverflowPageEmpty(overflow_page p){
+  for(int i = 0; i < OVERFLOW_N; i++){
+    if(!isEmpty(p.data[i]))
+      return false;
+  }
+
+  return true;
+}

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <list>
 #include "HashedFile.h"
 
 int hash(int level, int key){
@@ -7,7 +8,48 @@ int hash(int level, int key){
 }
 
 float HashedFile::spaceUtilization() {
-  return this->used_space / this->total_space;
+  return this->header.used_space / this->header.total_space;
+}
+
+int HashedFile::getPageHash(int key) {
+  int page_n = hash(this->header.level, key);
+  
+  if (page_n < this->header.next){
+    page_n = hash(this->header.level + 1, key);
+  }
+
+  return page_n;
+}
+
+page HashedFile::readPage(int n) {
+  FILE *f = fopen(this->file_name, "r");
+  fseek(f, sizeof(f_header) + sizeof(page)*n, SEEK_SET);
+
+  page aPage;
+  fread(&aPage, sizeof(page), 1, f);
+
+  fclose(f);
+  return aPage;
+}
+
+void HashedFile::persistPage(page p, int n) {
+  FILE *f = fopen(this->file_name, "r+");
+  
+  //persist data
+  fseek(f, sizeof(f_header) + sizeof(page)*n, SEEK_SET);
+  fwrite(&p, sizeof(page), 1, f);
+
+  fclose(f);
+}
+
+void HashedFile::persistHeader() {
+  FILE * f = fopen(this->file_name, "r+");
+  //presist header
+  fseek(f, 0, SEEK_SET);
+  f_header h = this->header;
+  fwrite(&h, sizeof(f_header), 1, f);
+
+  fclose(f);
 }
 
 HashedFile::HashedFile(char *name) {
@@ -56,17 +98,9 @@ void HashedFile::init() {
 }
 
 void HashedFile::add(user aUser) {
-  int page_n = hash(this->header.level, aUser.id);
-  
-  if (page_n < this->header.next){
-    page_n = hash(this->header.level + 1, aUser.id);
-  }
+  int page_n = this->getPageHash(aUser.id);
 
-  FILE *f = fopen(this->file_name, "r+");
-  fseek(f, sizeof(f_header) + sizeof(page)*page_n, SEEK_SET);
-
-  page aPage;
-  fread(&aPage, sizeof(page), 1, f);
+  page aPage = this->readPage(page_n);
 
   //find the empty space
   bool had_space = false;
@@ -120,31 +154,86 @@ void HashedFile::add(user aUser) {
   }
 
   //persist data
-  fseek(f, sizeof(f_header) + sizeof(page)*page_n, SEEK_SET);
-  fwrite(&aPage, sizeof(page), 1, f);
+  this->persistPage(aPage, page_n);
 
   this->header.used_space++;
-  //presist header
-  fseek(f, 0, SEEK_SET);
-  f_header h = this->header;
-  fwrite(&h, sizeof(f_header), 1, f);
+  
+  this->persistHeader();
+}
 
-  fclose(f);
+bool HashedFile::remove(int key) {
+  int page_n = this->getPageHash(key);
+
+  page aPage = this->readPage(page_n);
+
+  bool found_record = false;
+  for(int i=0; i < REGISTROS_POR_PAGINA; i++){
+    if(aPage.data[i].id == key) {
+      aPage.data[i].id = EMPTY;
+
+      this->header.used_space--;
+      this->persistPage(aPage, page_n);
+
+      found_record = true;
+    }
+  }
+
+  if (!found_record) {
+    int overflow_addr = aPage.overflow_addr;
+    if(overflow_addr != -1) {
+      
+      overflow_page parent_page;
+      int parent_page_addr = -1;
+
+      overflow_page curr_page = getOverflowPage(overflow_addr);
+      int curr_page_n = overflow_addr;
+      
+      found_record = deleteRecordOn(&curr_page, key);
+      
+      while(!found_record){
+        int aux = curr_page_n;
+        curr_page_n = curr_page.next;
+        if(curr_page_n == -1)
+          break;
+
+        parent_page = curr_page;
+        parent_page_addr = aux;
+
+        curr_page = getOverflowPage(curr_page_n);
+        found_record = deleteRecordOn(&curr_page, key);
+      }
+
+      if (found_record) {
+        this->header.used_space--;
+        //delete page and change params
+        if (isOverflowPageEmpty(curr_page)) {
+
+          if (parent_page_addr == -1) {
+            aPage.overflow_addr = curr_page.next;
+            this->persistPage(aPage, page_n);
+          } else {
+            parent_page.next = curr_page.next;
+            persistOverflowPage(parent_page_addr, parent_page);
+          }
+
+          curr_page.avaiable = true;
+          curr_page.next = -1;
+
+          this->header.total_space -= OVERFLOW_N;
+        }
+        persistOverflowPage(curr_page_n, curr_page);
+      }
+    }
+  }
+
+  this->persistHeader();
+  return found_record;
 }
 
 user HashedFile::get(int key) {
-  int page_n = hash(this->header.level, key);
-  
-  if (page_n < this->header.next){
-    page_n = hash(this->header.level + 1, key);
-  }
+  int page_n = getPageHash(key);
 
-  FILE *f = fopen(this->file_name, "r+");
-  fseek(f, sizeof(f_header) + sizeof(page)*page_n, SEEK_SET);
-
-  page aPage;
-  fread(&aPage, sizeof(page), 1, f);
-  fclose(f);
+  page aPage = this->readPage(page_n);
 
   for(int i = 0; i < REGISTROS_POR_PAGINA; i++) {
     if(aPage.data[i].id == key) {
@@ -173,4 +262,33 @@ user HashedFile::get(int key) {
   user no_user;
   no_user.id = EMPTY;
   return no_user;
+}
+
+std::list<user> HashedFile::getAllDataFromPage(int page_n) {
+  std::list<user> user_list;
+  page aPage = this->readPage(page_n);
+  
+  for (int i = 0; i < REGISTROS_POR_PAGINA; i++) {
+    if (!isEmpty(aPage.data[i])) {
+      user_list.push_back(aPage.data[i]);
+    }
+  }
+
+  int overflow_addr = aPage.overflow_addr;
+  if (overflow_addr != -1) {
+    int curr_overflow_addr = overflow_addr;
+    do {
+      overflow_page curr_page = getOverflowPage(curr_overflow_addr);
+
+      for (int i=0; i < OVERFLOW_N; i++) {
+        if (!isEmpty(curr_page.data[i])) {
+          user_list.push_back(curr_page.data[i]);
+        }
+      }
+
+      curr_overflow_addr = curr_page.next;
+    }while(curr_overflow_addr != -1);
+  }
+
+  return user_list;
 }

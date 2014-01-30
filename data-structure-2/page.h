@@ -23,4 +23,7 @@ overflow_page getOverflowPage(int);
 void persistOverflowPage(int, overflow_page);
 int allocOverflowPage();
 bool insertOn(overflow_page*, user);
+bool deleteRecordOn(overflow_page*, int);
+bool isOverflowPageEmpty(overflow_page);
+
 #endif

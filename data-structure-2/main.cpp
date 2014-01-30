@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <list>
 #include "user.h"
 #include "page.h"
 #include "HashedFile.h"
@@ -19,7 +20,9 @@ int main() {
     aFile.add(aUser);
   }
 
-  user o_user = aFile.get(15);
-
+  std::list<user> user_list = aFile.getAllDataFromPage(0);
+  for (std::list<user>::iterator it=user_list.begin(); it != user_list.end(); ++it) {
+    printf("%d\n", it->id);
+  }
   return 0;
 }

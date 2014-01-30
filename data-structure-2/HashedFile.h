@@ -1,3 +1,4 @@
+#include <list>
 #include "user.h"
 #include "page.h"
 
@@ -19,7 +20,6 @@ class HashedFile{
 
 private:
   char *file_name;
-  float spaceUtilization();
 
 public:
   f_header header;
@@ -27,7 +27,15 @@ public:
   HashedFile(char *);
   void init();
   void add(user);
-  user get(int); 
+  bool remove(int);
+  user get(int);
+  int getPageHash(int);
+  page readPage(int);
+  void persistPage(page, int);
+  void persistHeader();
+  float spaceUtilization();
+  std::list<user> getAllDataFromPage(int);
+
 };
 
 #endif
