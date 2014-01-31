@@ -5,7 +5,7 @@
 #ifndef HASHEDFILE
 #define HASHEDFILE
 
-#define N 3
+#define N 4
 
 typedef struct{
   int level;
@@ -20,6 +20,8 @@ class HashedFile{
 
 private:
   char *file_name;
+  void reorganize(int);
+  int numberOfAccess(int);
 
 public:
   f_header header;
@@ -27,14 +29,19 @@ public:
   HashedFile(char *);
   void init();
   void add(user);
+  void addAndReorganize(user);
+  bool removeAndReorganize(int key);
   bool remove(int);
   user get(int);
   int getPageHash(int);
   page readPage(int);
   void persistPage(page, int);
   void persistHeader();
-  float spaceUtilization();
+  float packingFactor();
   std::list<user> getAllDataFromPage(int);
+  void split();
+  void unsplit();
+  float avaregeNumberOfAccess();
 
 };
 

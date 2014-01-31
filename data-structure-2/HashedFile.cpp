@@ -7,8 +7,8 @@ int hash(int level, int key){
   return key % (N*(1 << level));
 }
 
-float HashedFile::spaceUtilization() {
-  return this->header.used_space / this->header.total_space;
+float HashedFile::packingFactor() {
+  return (float)(this->header.used_space) / (float)(this->header.total_space);
 }
 
 int HashedFile::getPageHash(int key) {
@@ -291,4 +291,159 @@ std::list<user> HashedFile::getAllDataFromPage(int page_n) {
   }
 
   return user_list;
+}
+
+bool HashedFile::removeAndReorganize(int key) {
+  bool result = this->remove(key);
+
+  if(result){
+    int page_n = this->getPageHash(key);
+    std::list<user> user_list = this->getAllDataFromPage(page_n);
+    
+    for (std::list<user>::iterator it=user_list.begin(); it != user_list.end(); ++it) {
+      this->remove(it->id);
+    }
+
+    for (std::list<user>::iterator it=user_list.begin(); it != user_list.end(); ++it) {
+      this->add(*it);
+    }
+  }
+
+  float packingFactor = this->packingFactor();
+  while ( packingFactor < 0.4) {
+    this->unsplit();
+    packingFactor = this->packingFactor();
+  }
+
+  return result;
+
+}
+
+void HashedFile::split() {
+  int page_n = this->header.next;
+
+  std::list<user> user_list = this->getAllDataFromPage(page_n);
+
+  for (std::list<user>::iterator it=user_list.begin(); it != user_list.end(); ++it) {
+    this->remove(it->id);
+  }  
+
+  this->header.next++;
+  
+  if (this->header.next >= N * (1 << this->header.level)) {
+    this->header.next = 0;
+    this->header.level++;
+  }
+
+  this->header.total_space += 3;
+  
+  page aPage;
+  aPage.overflow_addr = EMPTY;
+  for (int j = 0; j < REGISTROS_POR_PAGINA; j++) {
+    aPage.data[j].id = EMPTY;
+    strcpy(aPage.data[j].name, "");
+    aPage.data[j].age = 0;
+  }
+
+  FILE *f = fopen(this->file_name, "a");
+  fwrite(&aPage, sizeof(page), 1, f);
+  fclose(f);
+
+  this->persistHeader();
+
+  for (std::list<user>::iterator it=user_list.begin(); it != user_list.end(); ++it) {
+    this->add(*it);
+  }  
+
+}
+
+void HashedFile::unsplit() {
+  if (this->header.next == 0 && this->header.level == 0)
+    return;
+  
+  int page_n = this->header.next + N * (1 << this->header.level);
+
+  std::list<user> user_list = this->getAllDataFromPage(page_n);
+
+  for (std::list<user>::iterator it=user_list.begin(); it != user_list.end(); ++it) {
+    this->remove(it->id);
+  }  
+
+  this->header.next--;
+  
+  if (this->header.next < 0) {
+    this->header.next = 0;
+    this->header.level--;
+  }
+
+  int qtd_overflow_page = (user_list.size() - 3) / OVERFLOW_N;
+  if(user_list.size() - 3 % OVERFLOW_N > 0)
+    qtd_overflow_page++;
+
+  this->header.total_space -= 3 + qtd_overflow_page * OVERFLOW_N;
+
+  this->persistHeader();
+
+  for (std::list<user>::iterator it=user_list.begin(); it != user_list.end(); ++it) {
+    this->add(*it);
+  }  
+
+}
+
+void HashedFile::addAndReorganize(user aUser) {
+  this->add(aUser);
+  float packingFactor = this->packingFactor();
+  while ( packingFactor > 0.8) {
+    this->split();
+    packingFactor = this->packingFactor();
+  }
+}
+
+int HashedFile::numberOfAccess(int key) {
+  int page_n = getPageHash(key);
+
+  page aPage = this->readPage(page_n);
+
+  int count = 1;
+  for(int i = 0; i < REGISTROS_POR_PAGINA; i++) {
+    if(aPage.data[i].id == key) {
+      return count;
+    }
+  }
+
+  if (aPage.overflow_addr != EMPTY) {
+    overflow_page curr_page = getOverflowPage(aPage.overflow_addr);
+    int curr_page_num = aPage.overflow_addr;
+    do {
+      count++;
+      for (int i = 0; i < OVERFLOW_N; i++) {
+        if(curr_page.data[i].id == key){
+          return count;
+        }
+      }
+
+      curr_page_num = curr_page.next;
+      if (curr_page_num != -1) {
+        curr_page = getOverflowPage(curr_page.next);
+      }
+    } while(curr_page_num != -1);
+  }
+
+  return count;
+}
+
+float HashedFile::avaregeNumberOfAccess() {
+  int qtd_pages = this->header.next + N * (1 << this->header.level);
+  int total_data = 0;
+  int total_access = 0;
+
+  for (int i = 0; i < qtd_pages; i++) {
+    std::list<user> user_list = this->getAllDataFromPage(i);
+    for (std::list<user>::iterator it=user_list.begin(); it != user_list.end(); ++it) {
+      total_data++;
+      total_access += this->numberOfAccess(it->id);
+    } 
+  }
+
+  return (float)(total_access) / (float)(total_data);
 }
