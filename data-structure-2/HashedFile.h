@@ -5,8 +5,6 @@
 #ifndef HASHEDFILE
 #define HASHEDFILE
 
-#define N 4
-
 typedef struct{
   int level;
   int next;

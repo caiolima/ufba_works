@@ -374,8 +374,8 @@ void HashedFile::unsplit() {
   this->header.next--;
   
   if (this->header.next < 0) {
-    this->header.next = 0;
     this->header.level--;
+    this->header.next = N * (1 << this->header.level) - 1;
   }
 
 

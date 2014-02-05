@@ -4,8 +4,9 @@
 #ifndef PAGE
 #define PAGE
 
+#define N 2
 #define REGISTROS_POR_PAGINA 3
-#define OVERFLOW_N 2
+#define OVERFLOW_N 3
 
 typedef struct {
   user data[REGISTROS_POR_PAGINA];

@@ -6,7 +6,7 @@
 #include "HashedFile.h"
 
 void printUser(user aUser) {
-  printf("chave: %d\nnome: %s\nidade: %d\n", aUser.id, aUser.name, aUser.age);
+  printf("chave: %d nome: %s idade: %d\n", aUser.id, aUser.name, aUser.age);
 }
 
 void insertOperation(HashedFile *file) {
