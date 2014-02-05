@@ -312,6 +312,8 @@ bool HashedFile::removeAndReorganize(int key) {
   float packingFactor = this->packingFactor();
   while ( packingFactor < 0.4) {
     this->unsplit();
+    if (this->header.next == 0 && this->header.level == 0)
+      break;
     packingFactor = this->packingFactor();
   }
 
@@ -335,7 +337,7 @@ void HashedFile::split() {
     this->header.level++;
   }
 
-  this->header.total_space += 3;
+  this->header.total_space += REGISTROS_POR_PAGINA;
   
   page aPage;
   aPage.overflow_addr = EMPTY;
@@ -360,8 +362,8 @@ void HashedFile::split() {
 void HashedFile::unsplit() {
   if (this->header.next == 0 && this->header.level == 0)
     return;
-  
-  int page_n = this->header.next + N * (1 << this->header.level);
+
+  int page_n = (this->header.next + N * (1 << this->header.level)) - 1;
 
   std::list<user> user_list = this->getAllDataFromPage(page_n);
 
@@ -376,15 +378,12 @@ void HashedFile::unsplit() {
     this->header.level--;
   }
 
-  int qtd_overflow_page = (user_list.size() - 3) / OVERFLOW_N;
-  if(user_list.size() - 3 % OVERFLOW_N > 0)
-    qtd_overflow_page++;
 
-  this->header.total_space -= 3 + qtd_overflow_page * OVERFLOW_N;
+  this->header.total_space -= REGISTROS_POR_PAGINA;
 
   this->persistHeader();
 
-  for (std::list<user>::iterator it=user_list.begin(); it != user_list.end(); ++it) {
+  for (std::list<user>::iterator it = user_list.begin(); it != user_list.end(); ++it) {
     this->add(*it);
   }  
 
